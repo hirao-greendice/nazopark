@@ -92,6 +92,36 @@
         </table>
       </article>
     </section>
+
+    <section class="grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 28px;">
+      <article class="card">
+        <h2>回答一覧</h2>
+        <table class="table" id="answerTable">
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>回答</th>
+              <th>詳細</th>
+              <th>時刻</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>参加者管理</h2>
+        <table class="table" id="playerTable">
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>スコア</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+    </section>
   </main>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>

@@ -2,11 +2,13 @@
   {
     id: 1,
     title: "秒感覚",
-    prompt: "ストップウォッチで 7.30 秒を狙え",
+    prompt: "ストップウォッチで 15.00 秒を狙え",
     type: "stopwatch",
-    target: 7.3,
+    target: 15,
     unit: "s",
-    image: "images/q01.png",
+    image: "stage1.webp",
+    fadeStart: 3,
+    fadeEnd: 5,
     explainImage: "images/q01_explain.png",
     precision: 2
   },

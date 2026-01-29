@@ -84,7 +84,7 @@
     let rafId = null;
 
     const timer = document.createElement("div");
-    timer.className = "timer";
+    timer.className = "timer stage-timer";
     timer.textContent = "0.00";
 
     const startBtn = document.createElement("button");
@@ -104,10 +104,40 @@
     row.className = "btn-row";
     row.append(startBtn, stopBtn, resetBtn);
 
+    let wrapper = null;
+    if (stage.image) {
+      wrapper = document.createElement("div");
+      wrapper.className = "stage-image-wrap";
+
+      const image = document.createElement("img");
+      image.className = "stage-image";
+      image.src = stage.image;
+      image.alt = "stage image";
+
+      const overlay = document.createElement("div");
+      overlay.className = "stage-overlay";
+      overlay.appendChild(timer);
+
+      wrapper.append(image, overlay);
+      gadgetArea.append(wrapper, row);
+    } else {
+      gadgetArea.append(timer, row);
+    }
+
     function updateTimer() {
       const now = performance.now();
       elapsed = (now - startTime) / 1000;
       timer.textContent = elapsed.toFixed(stage.precision ?? 2);
+      if (stage.fadeStart !== undefined && stage.fadeEnd !== undefined) {
+        if (elapsed <= stage.fadeStart) {
+          timer.style.opacity = "1";
+        } else if (elapsed >= stage.fadeEnd) {
+          timer.style.opacity = "0";
+        } else {
+          const ratio = (elapsed - stage.fadeStart) / (stage.fadeEnd - stage.fadeStart);
+          timer.style.opacity = `${1 - ratio}`;
+        }
+      }
       rafId = requestAnimationFrame(updateTimer);
     }
 
@@ -139,13 +169,16 @@
       cancelAnimationFrame(rafId);
       elapsed = 0;
       timer.textContent = "0.00";
+      timer.style.opacity = "1";
       stopBtn.disabled = true;
       startBtn.disabled = false;
       setCurrentValue(null);
       setAnswerStatus("未送信");
     });
 
-    gadgetArea.append(timer, row);
+    if (!wrapper) {
+      gadgetArea.append(timer, row);
+    }
     cleanupFns.push(() => cancelAnimationFrame(rafId));
   }
 

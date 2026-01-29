@@ -23,6 +23,8 @@
 
   const resultTableBody = document.querySelector("#resultTable tbody");
   const scoreTableBody = document.querySelector("#scoreTable tbody");
+  const answerTableBody = document.querySelector("#answerTable tbody");
+  const playerTableBody = document.querySelector("#playerTable tbody");
 
   const MAX_STAGE = GAME_STAGES.length;
   const POINTS = [3, 2, 1];
@@ -98,6 +100,49 @@
     });
   }
 
+  function formatMeta(meta, stage) {
+    if (!meta) {
+      return "-";
+    }
+    if (stage.type === "overlay") {
+      const scale = meta.scale !== undefined ? Number(meta.scale).toFixed(2) : "-";
+      const offsetX = meta.offsetX !== undefined ? Math.round(meta.offsetX) : "-";
+      const offsetY = meta.offsetY !== undefined ? Math.round(meta.offsetY) : "-";
+      return `scale ${scale}, dx ${offsetX}, dy ${offsetY}`;
+    }
+    return "-";
+  }
+
+  function renderAnswers(responses, stage) {
+    answerTableBody.innerHTML = "";
+    const list = Object.values(responses || {}).map((response) => ({
+      name: response.name || "No Name",
+      value: response.value,
+      meta: response.meta || null,
+      submittedAt: response.submittedAt || 0
+    }));
+    list.sort((a, b) => a.submittedAt - b.submittedAt);
+
+    if (list.length === 0) {
+      const row = document.createElement("tr");
+      row.innerHTML = "<td colspan=\"4\">回答なし</td>";
+      answerTableBody.appendChild(row);
+      return;
+    }
+
+    list.forEach((entry) => {
+      const row = document.createElement("tr");
+      const timeText = entry.submittedAt ? new Date(entry.submittedAt).toLocaleTimeString() : "-";
+      row.innerHTML = `
+        <td>${entry.name}</td>
+        <td>${formatValue(Number(entry.value), stage)}</td>
+        <td>${formatMeta(entry.meta, stage)}</td>
+        <td>${timeText}</td>
+      `;
+      answerTableBody.appendChild(row);
+    });
+  }
+
   function renderScores(players) {
     scoreTableBody.innerHTML = "";
     const list = Object.values(players || {}).map((player) => ({
@@ -125,6 +170,73 @@
     });
   }
 
+  function renderPlayers(players) {
+    playerTableBody.innerHTML = "";
+    const list = Object.values(players || {}).map((player) => ({
+      id: player.id,
+      name: player.name || "No Name",
+      score: player.score || 0
+    }));
+    list.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (list.length === 0) {
+      const row = document.createElement("tr");
+      row.innerHTML = "<td colspan=\"3\">参加者なし</td>";
+      playerTableBody.appendChild(row);
+      return;
+    }
+
+    list.forEach((player) => {
+      const row = document.createElement("tr");
+      const nameCell = document.createElement("td");
+      nameCell.textContent = player.name;
+      const scoreCell = document.createElement("td");
+      scoreCell.textContent = player.score;
+      const actionCell = document.createElement("td");
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn btn-ghost";
+      deleteBtn.textContent = "削除";
+      deleteBtn.addEventListener("click", () => {
+        deletePlayer(player.id).catch((error) => {
+          console.error(error);
+          masterNotice.textContent = "削除に失敗しました";
+        });
+      });
+      actionCell.appendChild(deleteBtn);
+      row.append(nameCell, scoreCell, actionCell);
+      playerTableBody.appendChild(row);
+    });
+  }
+
+  async function deletePlayer(playerId) {
+    const confirmed = window.confirm("この参加者を削除します。よろしいですか？");
+    if (!confirmed) {
+      return;
+    }
+
+    const updates = {};
+    updates[`players/${playerId}`] = null;
+    for (let i = 1; i <= MAX_STAGE; i += 1) {
+      updates[`responses/${i}/${playerId}`] = null;
+    }
+    await db.ref().update(updates);
+
+    const resultsSnap = await resultsRef.once("value");
+    const results = resultsSnap.val() || {};
+    const resultUpdates = {};
+    Object.entries(results).forEach(([stageId, result]) => {
+      if (result && result.ranked && Array.isArray(result.ranked)) {
+        const filtered = result.ranked.filter((entry) => entry.playerId !== playerId);
+        if (filtered.length !== result.ranked.length) {
+          resultUpdates[`results/${stageId}/ranked`] = filtered;
+        }
+      }
+    });
+    if (Object.keys(resultUpdates).length > 0) {
+      await db.ref().update(resultUpdates);
+    }
+  }
+
   function watchStage(stageIndex) {
     if (stageResponsesListener) {
       responsesRef.child(observedStageIndex).off("value", stageResponsesListener);
@@ -139,6 +251,7 @@
     stageResponsesListener = (snapshot) => {
       const data = snapshot.val() || {};
       answerCount.textContent = Object.keys(data).length;
+      renderAnswers(data, stage);
     };
     responsesRef.child(stageIndex).on("value", stageResponsesListener);
 
@@ -304,6 +417,7 @@
     const players = snapshot.val() || {};
     playerCount.textContent = Object.keys(players).length;
     renderScores(players);
+    renderPlayers(players);
   });
 
   prevStageBtn.addEventListener("click", () => {

@@ -76,6 +76,59 @@
     cell.style.color = shade < 120 ? "#ffffff" : "#111111";
   }
 
+  function createValueOverlay(stage, entry) {
+    const overlay = document.createElement("div");
+    overlay.className = "cell-visual-overlay";
+
+    const valueText = formatValue(entry.value, stage);
+    if (valueText === "-" || valueText === "NaN") {
+      const valueEl = document.createElement("div");
+      valueEl.className = "cell-visual-value";
+      valueEl.textContent = "未回答";
+      overlay.append(valueEl);
+      return overlay;
+    }
+
+    if (stage.type === "gyro") {
+      const pivot = document.createElement("div");
+      pivot.className = "cell-angle-pivot";
+
+      const baseLine = document.createElement("div");
+      baseLine.className = "cell-angle-line cell-angle-fixed";
+
+      const moveLine = document.createElement("div");
+      moveLine.className = "cell-angle-line cell-angle-move";
+
+      const angle = typeof entry.value === "number" ? Math.abs(entry.value) : 0;
+      moveLine.style.transform = `rotate(${-angle}deg)`;
+
+      pivot.append(baseLine, moveLine);
+      overlay.append(pivot);
+      return overlay;
+    }
+
+    if (stage.type === "compass") {
+      const pivot = document.createElement("div");
+      pivot.className = "cell-angle-pivot";
+
+      const moveLine = document.createElement("div");
+      moveLine.className = "cell-angle-line cell-angle-move";
+
+      const angle = typeof entry.value === "number" ? entry.value : 0;
+      moveLine.style.transform = `rotate(${angle}deg)`;
+
+      pivot.append(moveLine);
+      overlay.append(pivot);
+      return overlay;
+    }
+
+    const valueEl = document.createElement("div");
+    valueEl.className = "cell-visual-value";
+    valueEl.textContent = valueText;
+    overlay.append(valueEl);
+    return overlay;
+  }
+
   function renderGrid() {
     resultGrid.innerHTML = "";
     const stage = getStageByIndex(currentStageIndex);
@@ -172,6 +225,24 @@
 
           preview.append(base, overlay);
           cell.append(nameRow, preview);
+        } else if (stage.image) {
+          const nameRowHtml = rankLabel
+            ? `<div class=\"cell-name-row\"><div class=\"cell-name\">${name}</div><div class=\"cell-rank-inline\">${rankLabel}</div></div>`
+            : `<div class=\"cell-name-row\"><div class=\"cell-name\">${name}</div></div>`;
+
+          const visual = document.createElement("div");
+          visual.className = "cell-visual";
+
+          const image = document.createElement("img");
+          image.className = "cell-visual-image";
+          image.src = stage.image;
+          image.alt = "answer image";
+
+          const overlay = createValueOverlay(stage, entry);
+
+          visual.append(image, overlay);
+          cell.innerHTML = `${nameRowHtml}`;
+          cell.append(visual);
         } else {
           const value = formatValue(entry.value, stage);
           const nameRowHtml = rankLabel
