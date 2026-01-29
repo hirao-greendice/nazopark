@@ -204,6 +204,27 @@ p {
   margin-top: 12px;
 }
 
+.circle-preview {
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  margin: 4px auto;
+}
+
+.calibration {
+  display: grid;
+  gap: 8px;
+}
+
+.calibration-track {
+  overflow-x: auto;
+}
+
+.calibration-bar {
+  height: 18px;
+  border: 1px solid var(--ink);
+  background: #ffffff;
+}
+
 .timer {
   font-size: 40px;
   letter-spacing: 0.08em;
@@ -386,12 +407,8 @@ body.simple {
   gap: 12px;
 }
 
-.screen-media {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
-  margin-bottom: 16px;
+.screen-stage-area {
+  position: relative;
 }
 
 .screen-image {
@@ -410,6 +427,16 @@ body.simple {
   align-items: center;
   padding: 24px;
   z-index: 10;
+}
+
+.screen-overlay[hidden] {
+  display: none;
+}
+
+.question-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
 }
 
 .overlay-content {

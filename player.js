@@ -19,11 +19,14 @@
   const playerIdKey = "sense-player-id";
   const playerNameKey = "sense-player-name";
   const MAX_STAGE = GAME_STAGES.length;
+  const CAL_FACTOR_KEY = "sense-calibration-factor";
+  const BASE_PX_PER_MM = (96 / 25.4) * (window.devicePixelRatio || 1);
 
   const playerId = localStorage.getItem(playerIdKey) || `p_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   localStorage.setItem(playerIdKey, playerId);
 
   let playerName = localStorage.getItem(playerNameKey) || "";
+  let calibrationFactor = parseFloat(localStorage.getItem(CAL_FACTOR_KEY)) || 1;
   let currentStageIndex = 1;
   let currentPhase = "waiting";
   let currentValue = null;
@@ -65,6 +68,10 @@
     cleanupFns = [];
     gadgetArea.innerHTML = "";
     currentValue = null;
+  }
+
+  function getPxPerMm() {
+    return BASE_PX_PER_MM * calibrationFactor;
   }
 
   function createLabel(text) {
@@ -408,6 +415,80 @@
     gadgetArea.append(input);
   }
 
+  function renderCircle(stage) {
+    const valueLabel = document.createElement("div");
+    valueLabel.className = "timer";
+
+    const circle = document.createElement("div");
+    circle.className = "circle-preview";
+
+    const input = document.createElement("input");
+    input.type = "range";
+    input.min = stage.min;
+    input.max = stage.max;
+    input.step = stage.step || 1;
+    input.value = stage.min;
+    input.style.width = "100%";
+
+    const calibrationWrap = document.createElement("div");
+    calibrationWrap.className = "calibration";
+
+    const calibrationTitle = document.createElement("div");
+    calibrationTitle.className = "notice";
+    calibrationTitle.textContent = "校正: クレジットカード(85.6mm)に合わせて調整";
+
+    const calibrationBar = document.createElement("div");
+    calibrationBar.className = "calibration-bar";
+
+    const calibrationTrack = document.createElement("div");
+    calibrationTrack.className = "calibration-track";
+    calibrationTrack.append(calibrationBar);
+
+    const calibrationSlider = document.createElement("input");
+    calibrationSlider.type = "range";
+    calibrationSlider.min = "0.5";
+    calibrationSlider.max = "1.5";
+    calibrationSlider.step = "0.01";
+    calibrationSlider.value = calibrationFactor.toFixed(2);
+
+    const calibrationValue = document.createElement("div");
+    calibrationValue.className = "notice";
+
+    const calibrationSave = document.createElement("button");
+    calibrationSave.className = "btn btn-ghost";
+    calibrationSave.textContent = "校正を保存";
+
+    function updateCalibration() {
+      calibrationFactor = Number(calibrationSlider.value);
+      calibrationValue.textContent = `倍率 x${calibrationFactor.toFixed(2)}`;
+      calibrationBar.style.width = `${85.6 * getPxPerMm()}px`;
+      updateCircle();
+    }
+
+    function updateCircle() {
+      const value = Number(input.value);
+      valueLabel.textContent = `${value} mm`;
+      const sizePx = value * getPxPerMm();
+      circle.style.width = `${sizePx}px`;
+      circle.style.height = `${sizePx}px`;
+      setCurrentValue(value);
+    }
+
+    calibrationSlider.addEventListener("input", updateCalibration);
+    calibrationSave.addEventListener("click", () => {
+      localStorage.setItem(CAL_FACTOR_KEY, calibrationFactor.toFixed(2));
+      setAnswerStatus("校正を保存しました");
+    });
+
+    input.addEventListener("input", updateCircle);
+
+    updateCalibration();
+    updateCircle();
+
+    calibrationWrap.append(calibrationTitle, calibrationTrack, calibrationSlider, calibrationValue, calibrationSave);
+    gadgetArea.append(valueLabel, circle, input, calibrationWrap);
+  }
+
   function renderChoice(stage) {
     const row = document.createElement("div");
     row.className = "choice-row";
@@ -453,6 +534,9 @@
     }
 
     switch (stage.type) {
+      case "circle":
+        renderCircle(stage);
+        break;
       case "gyro":
         renderGyro(stage);
         break;

@@ -6,7 +6,7 @@
   const stageLabel = document.getElementById("stageLabel");
   const stagePrompt = document.getElementById("stagePrompt");
   const resultGrid = document.getElementById("resultGrid");
-  const questionMedia = document.getElementById("questionMedia");
+  const questionOverlay = document.getElementById("questionOverlay");
   const stageImage = document.getElementById("stageImage");
   const explainOverlay = document.getElementById("explainOverlay");
   const explainImage = document.getElementById("explainImage");
@@ -65,8 +65,9 @@
     const showQuestion = currentPhase === "open";
     const entries = showResults ? buildEntries() : [];
 
-    questionMedia.hidden = !showQuestion;
-    resultGrid.hidden = !showResults;
+    questionOverlay.hidden = !showQuestion;
+    questionOverlay.style.display = showQuestion ? "flex" : "none";
+    resultGrid.style.visibility = showResults ? "visible" : "hidden";
 
     stageImage.src = stage.image || "";
     stageImage.style.visibility = showQuestion && stage.image ? "visible" : "hidden";
@@ -116,6 +117,7 @@
     watchResults(currentStageIndex);
     explainImage.src = stage.explainImage || "";
     explainOverlay.hidden = !explainVisible;
+    explainOverlay.style.display = explainVisible ? "flex" : "none";
     renderGrid();
   });
 
