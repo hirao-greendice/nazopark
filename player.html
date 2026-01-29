@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>センスでアンサー | プレイヤー</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="simple">
+  <main class="simple-page">
+    <section id="registerPanel" class="card register-panel">
+      <div class="register-title">名前を登録</div>
+      <div class="register-row">
+        <input id="nameInput" class="input" placeholder="ニックネーム" maxlength="12" />
+        <button id="saveName" class="btn">OK</button>
+      </div>
+      <div id="registerStatus" class="notice">未登録</div>
+    </section>
+
+    <header id="playerBar" class="topbar" hidden>
+      <div class="topbar-item">
+        <span class="topbar-label">PLAYER</span>
+        <span id="playerNameLabel" class="topbar-value">-</span>
+      </div>
+      <div class="topbar-item">
+        <span class="topbar-label">POINT</span>
+        <span id="playerScoreLabel" class="topbar-value">0 pt</span>
+      </div>
+    </header>
+
+    <section id="gadgetSection" class="gadget-only" hidden>
+      <div id="gadgetArea" class="gadget"></div>
+      <button id="submitAnswer" class="btn" disabled>この回答を送信</button>
+      <div id="answerStatus" class="notice">未送信</div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="game-data.js"></script>
+  <script src="player.js"></script>
+</body>
+</html>

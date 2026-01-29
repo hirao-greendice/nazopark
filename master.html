@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>センスでアンサー | マスター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <span class="badge">Master</span>
+      <h1 class="title">マスター操作</h1>
+      <p class="subtitle">出題・結果発表・スコア管理をここで行います。</p>
+    </section>
+
+    <section class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+      <article class="card">
+        <h2>ステージ制御</h2>
+        <div class="kv">
+          <span class="label">現在のステージ</span>
+          <span id="stageLabel" class="value">-</span>
+        </div>
+        <p id="stagePrompt" class="big-quote"></p>
+        <div class="btn-row" style="margin-top: 12px;">
+          <button id="prevStage" class="btn btn-ghost">前へ</button>
+          <button id="nextStage" class="btn btn-ghost">次へ</button>
+        </div>
+        <div class="btn-row" style="margin-top: 12px;">
+          <button id="setWaiting" class="btn btn-outline">待機</button>
+          <button id="setOpen" class="btn">出題開始</button>
+          <button id="showResults" class="btn btn-outline">結果表示</button>
+          <button id="showRanking" class="btn btn-outline">順位付け</button>
+        </div>
+        <div class="btn-row" style="margin-top: 12px;">
+          <button id="showExplain" class="btn btn-ghost">解説表示</button>
+          <button id="hideExplain" class="btn btn-ghost">解説解除</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>状態</h2>
+        <div class="stat">
+          <span>フェーズ</span>
+          <strong id="phaseLabel">-</strong>
+        </div>
+        <div class="stat">
+          <span>参加人数</span>
+          <strong id="playerCount">0</strong>
+        </div>
+        <div class="stat">
+          <span>回答数</span>
+          <strong id="answerCount">0</strong>
+        </div>
+        <div class="notice" id="masterNotice">準備中</div>
+        <div class="btn-row" style="margin-top: 12px;">
+          <button id="resetGame" class="btn btn-ghost">全リセット</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 28px;">
+      <article class="card">
+        <h2>ステージ結果</h2>
+        <table class="table" id="resultTable">
+          <thead>
+            <tr>
+              <th>順位</th>
+              <th>名前</th>
+              <th>回答</th>
+              <th>差</th>
+              <th>ポイント</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h2>総合スコア</h2>
+        <table class="table" id="scoreTable">
+          <thead>
+            <tr>
+              <th>順位</th>
+              <th>名前</th>
+              <th>合計</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="game-data.js"></script>
+  <script src="master.js"></script>
+</body>
+</html>
+
+

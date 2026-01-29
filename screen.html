@@ -1,0 +1,41 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>センスでアンサー | スクリーン</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="simple">
+  <main class="screen-page">
+    <header class="screen-header">
+      <div>
+        <div id="stageLabel" class="screen-stage">-</div>
+        <div id="stagePrompt" class="screen-prompt">待機中</div>
+      </div>
+    </header>
+
+    <section id="questionMedia" class="screen-media">
+      <img id="stageImage" class="screen-image" alt="question" />
+    </section>
+
+    <section id="resultGrid" class="screen-grid"></section>
+
+    <div id="explainOverlay" class="screen-overlay" hidden>
+      <div class="overlay-content">
+        <div class="overlay-label">解説</div>
+        <img id="explainImage" class="screen-image" alt="explain" />
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="game-data.js"></script>
+  <script src="screen.js"></script>
+</body>
+</html>
