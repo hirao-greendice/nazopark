@@ -204,25 +204,76 @@ p {
   margin-top: 12px;
 }
 
-.circle-preview {
-  border: 2px solid var(--ink);
-  border-radius: 50%;
-  margin: 4px auto;
-}
-
-.calibration {
-  display: grid;
-  gap: 8px;
-}
-
-.calibration-track {
-  overflow-x: auto;
-}
-
-.calibration-bar {
-  height: 18px;
-  border: 1px solid var(--ink);
+.overlay-area {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  border: 1px dashed var(--line);
+  overflow: hidden;
   background: #ffffff;
+}
+
+.overlay-base,
+.overlay-target {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  user-select: none;
+}
+
+.overlay-target {
+  cursor: grab;
+  touch-action: none;
+}
+
+.overlay-target:active {
+  cursor: grabbing;
+}
+
+.angle-stage {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.angle-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  user-select: none;
+}
+
+.angle-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.angle-pivot {
+  position: absolute;
+  left: var(--pivot-x, 40%);
+  top: var(--pivot-y, 60%);
+}
+
+.angle-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--arm-length, 140px);
+  height: 2px;
+  background: var(--ink);
+  transform-origin: 0 50%;
+}
+
+.angle-line-fixed {
+  transform: rotate(0deg);
+}
+
+.angle-line-move {
+  transform: rotate(0deg);
 }
 
 .timer {
@@ -461,6 +512,24 @@ body.simple {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: relative;
+}
+
+.cell-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cell-rank-inline {
+  font-size: inherit;
+  font-weight: inherit;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  white-space: nowrap;
+  opacity: 0.8;
 }
 
 .screen-cell .cell-name {
@@ -473,6 +542,25 @@ body.simple {
   font-weight: 700;
   text-align: right;
 }
+
+.cell-overlay {
+  position: relative;
+  flex: 1;
+  border: 1px dashed var(--line);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.cell-overlay-base,
+.cell-overlay-target {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  pointer-events: none;
+}
+
 
 .cell-empty {
   border-style: dashed;

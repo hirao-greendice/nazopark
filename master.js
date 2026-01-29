@@ -88,7 +88,7 @@
       const diffDisplay = Number.isFinite(diffValue) ? diffValue : null;
       const points = entry.points ?? 0;
       row.innerHTML = `
-        <td>${index + 1}</td>
+        <td>${entry.rank ?? index + 1}</td>
         <td>${entry.name}</td>
         <td>${formatValue(entry.value, stage)}</td>
         <td>${formatValue(diffDisplay, stage)}</td>
@@ -166,12 +166,41 @@
 
     const responsesSnap = await responsesRef.child(currentStageIndex).once("value");
     const responses = responsesSnap.val() || {};
-    const entries = Object.entries(responses).map(([playerId, response]) => ({
-      playerId,
-      name: response.name || "No Name",
-      value: Number(response.value),
-      submittedAt: response.submittedAt || 0
-    }));
+    const playersSnap = await playersRef.once("value");
+    const players = playersSnap.val() || {};
+
+    const entries = Object.entries(players).map(([playerId, player]) => {
+      const response = responses[playerId];
+      if (response) {
+        return {
+          playerId,
+          name: response.name || player.name || "No Name",
+          value: Number(response.value),
+          meta: response.meta || null,
+          submittedAt: response.submittedAt || 0
+        };
+      }
+      return {
+        playerId,
+        name: player.name || "No Name",
+        value: null,
+        meta: null,
+        submittedAt: Number.POSITIVE_INFINITY
+      };
+    });
+
+    Object.entries(responses).forEach(([playerId, response]) => {
+      if (players[playerId]) {
+        return;
+      }
+      entries.push({
+        playerId,
+        name: response.name || "No Name",
+        value: Number(response.value),
+        meta: response.meta || null,
+        submittedAt: response.submittedAt || 0
+      });
+    });
 
     entries.sort((a, b) => {
       const diffA = computeDiff(a.value, stage);
@@ -182,19 +211,34 @@
       return a.submittedAt - b.submittedAt;
     });
 
-    const ranked = entries.map((entry, index) => ({
-      playerId: entry.playerId,
-      name: entry.name,
-      value: entry.value,
-      points: POINTS[index] || 0
-    }));
+    const ranked = [];
+    let lastDiff = null;
+    let lastRank = 0;
+    entries.forEach((entry, index) => {
+      const diff = computeDiff(entry.value, stage);
+      if (index === 0 || diff !== lastDiff) {
+        lastRank = index + 1;
+        lastDiff = diff;
+      }
+      const rank = lastRank;
+      const points = POINTS[rank - 1] || 0;
+      ranked.push({
+        playerId: entry.playerId,
+        name: entry.name,
+        value: entry.value,
+        meta: entry.meta || null,
+        rank,
+        points
+      });
+    });
 
     const updates = {
       awarded: false,
       stageId: currentStageIndex,
       target: stage.target,
       updatedAt: Date.now(),
-      ranked
+      ranked,
+      includesAll: true
     };
 
     await resultsRef.child(currentStageIndex).set(updates);

@@ -19,17 +19,15 @@
   const playerIdKey = "sense-player-id";
   const playerNameKey = "sense-player-name";
   const MAX_STAGE = GAME_STAGES.length;
-  const CAL_FACTOR_KEY = "sense-calibration-factor";
-  const BASE_PX_PER_MM = (96 / 25.4) * (window.devicePixelRatio || 1);
 
   const playerId = localStorage.getItem(playerIdKey) || `p_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   localStorage.setItem(playerIdKey, playerId);
 
   let playerName = localStorage.getItem(playerNameKey) || "";
-  let calibrationFactor = parseFloat(localStorage.getItem(CAL_FACTOR_KEY)) || 1;
   let currentStageIndex = 1;
   let currentPhase = "waiting";
   let currentValue = null;
+  let currentMeta = null;
   let cleanupFns = [];
   let responseListener = null;
   let observedStageIndex = null;
@@ -58,8 +56,9 @@
     submitBtn.disabled = !canSubmit;
   }
 
-  function setCurrentValue(value) {
+  function setCurrentValue(value, meta = null) {
     currentValue = value;
+    currentMeta = meta;
     updateSubmitState();
   }
 
@@ -68,10 +67,7 @@
     cleanupFns = [];
     gadgetArea.innerHTML = "";
     currentValue = null;
-  }
-
-  function getPxPerMm() {
-    return BASE_PX_PER_MM * calibrationFactor;
+    currentMeta = null;
   }
 
   function createLabel(text) {
@@ -342,21 +338,58 @@
   }
 
   function renderGyro(stage) {
-    const valueLabel = document.createElement("div");
-    valueLabel.className = "timer";
-    valueLabel.textContent = "0.0°";
+    const wrapper = document.createElement("div");
+    wrapper.className = "angle-stage";
+
+    const image = document.createElement("img");
+    image.className = "angle-image";
+    image.src = stage.image || "";
+    image.alt = "stage image";
+
+    const overlay = document.createElement("div");
+    overlay.className = "angle-overlay";
+
+    const pivot = document.createElement("div");
+    pivot.className = "angle-pivot";
+
+    const baseLine = document.createElement("div");
+    baseLine.className = "angle-line angle-line-fixed";
+
+    const movingLine = document.createElement("div");
+    movingLine.className = "angle-line angle-line-move";
+
+    pivot.append(baseLine, movingLine);
+    overlay.append(pivot);
+    wrapper.append(image, overlay);
+    gadgetArea.append(wrapper);
 
     const hint = createLabel("スマホを縦に傾けてください");
-    gadgetArea.append(valueLabel, hint);
+    gadgetArea.append(hint);
+
+    function updateGeometry() {
+      const width = image.clientWidth || 300;
+      const height = image.clientHeight || 300;
+      const pivotX = width * 0.32;
+      const pivotY = height * 0.58;
+      const arm = Math.min(width * 0.45, 180);
+      wrapper.style.setProperty("--pivot-x", `${pivotX}px`);
+      wrapper.style.setProperty("--pivot-y", `${pivotY}px`);
+      wrapper.style.setProperty("--arm-length", `${arm}px`);
+    }
+
+    image.addEventListener("load", updateGeometry);
+    window.addEventListener("resize", updateGeometry);
+    cleanupFns.push(() => window.removeEventListener("resize", updateGeometry));
+    updateGeometry();
 
     setupOrientation((event) => {
       if (event.beta === null || event.beta === undefined) {
         return;
       }
       const raw = Math.max(-90, Math.min(90, event.beta));
-      const value = Number(raw.toFixed(stage.precision ?? 1));
-      valueLabel.textContent = `${value}°`;
-      setCurrentValue(value);
+      const angle = Math.abs(raw);
+      movingLine.style.transform = `rotate(${-angle}deg)`;
+      setCurrentValue(Number(angle.toFixed(stage.precision ?? 1)));
     }, gadgetArea);
   }
 
@@ -415,78 +448,85 @@
     gadgetArea.append(input);
   }
 
-  function renderCircle(stage) {
-    const valueLabel = document.createElement("div");
-    valueLabel.className = "timer";
+  function renderOverlay(stage) {
+    const area = document.createElement("div");
+    area.className = "overlay-area";
 
-    const circle = document.createElement("div");
-    circle.className = "circle-preview";
+    const base = document.createElement("img");
+    base.className = "overlay-base";
+    base.src = stage.baseImage || "";
 
-    const input = document.createElement("input");
-    input.type = "range";
-    input.min = stage.min;
-    input.max = stage.max;
-    input.step = stage.step || 1;
-    input.value = stage.min;
-    input.style.width = "100%";
+    const overlay = document.createElement("img");
+    overlay.className = "overlay-target";
+    overlay.src = stage.overlayImage || "";
 
-    const calibrationWrap = document.createElement("div");
-    calibrationWrap.className = "calibration";
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = stage.minScale ?? 0.5;
+    slider.max = stage.maxScale ?? 2.5;
+    slider.step = 0.01;
+    slider.value = stage.initialScale ?? 2;
+    slider.style.width = "100%";
 
-    const calibrationTitle = document.createElement("div");
-    calibrationTitle.className = "notice";
-    calibrationTitle.textContent = "校正: クレジットカード(85.6mm)に合わせて調整";
+    area.append(base, overlay);
 
-    const calibrationBar = document.createElement("div");
-    calibrationBar.className = "calibration-bar";
+    let offsetX = 0;
+    let offsetY = 0;
+    let scale = Number(slider.value);
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startOffsetX = 0;
+    let startOffsetY = 0;
 
-    const calibrationTrack = document.createElement("div");
-    calibrationTrack.className = "calibration-track";
-    calibrationTrack.append(calibrationBar);
+    const visualScale = stage.visualScale || 1;
+    const baseSize = (stage.baseSize || 160) * visualScale;
+    base.style.width = `${baseSize}px`;
+    base.style.height = `${baseSize}px`;
+    overlay.style.width = `${baseSize}px`;
+    overlay.style.height = `${baseSize}px`;
 
-    const calibrationSlider = document.createElement("input");
-    calibrationSlider.type = "range";
-    calibrationSlider.min = "0.5";
-    calibrationSlider.max = "1.5";
-    calibrationSlider.step = "0.01";
-    calibrationSlider.value = calibrationFactor.toFixed(2);
-
-    const calibrationValue = document.createElement("div");
-    calibrationValue.className = "notice";
-
-    const calibrationSave = document.createElement("button");
-    calibrationSave.className = "btn btn-ghost";
-    calibrationSave.textContent = "校正を保存";
-
-    function updateCalibration() {
-      calibrationFactor = Number(calibrationSlider.value);
-      calibrationValue.textContent = `倍率 x${calibrationFactor.toFixed(2)}`;
-      calibrationBar.style.width = `${85.6 * getPxPerMm()}px`;
-      updateCircle();
+    function updateOverlay() {
+      overlay.style.transform = `translate(-50%, -50%) translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+      const positionError = Math.sqrt(offsetX ** 2 + offsetY ** 2) / baseSize;
+      const sizeError = Math.abs(scale - 1);
+      const error = Number((positionError + sizeError).toFixed(4));
+      setCurrentValue(error, { offsetX, offsetY, scale });
     }
 
-    function updateCircle() {
-      const value = Number(input.value);
-      valueLabel.textContent = `${value} mm`;
-      const sizePx = value * getPxPerMm();
-      circle.style.width = `${sizePx}px`;
-      circle.style.height = `${sizePx}px`;
-      setCurrentValue(value);
-    }
-
-    calibrationSlider.addEventListener("input", updateCalibration);
-    calibrationSave.addEventListener("click", () => {
-      localStorage.setItem(CAL_FACTOR_KEY, calibrationFactor.toFixed(2));
-      setAnswerStatus("校正を保存しました");
+    slider.addEventListener("input", () => {
+      scale = Number(slider.value);
+      updateOverlay();
     });
 
-    input.addEventListener("input", updateCircle);
+    overlay.addEventListener("pointerdown", (event) => {
+      dragging = true;
+      startX = event.clientX;
+      startY = event.clientY;
+      startOffsetX = offsetX;
+      startOffsetY = offsetY;
+      overlay.setPointerCapture(event.pointerId);
+    });
 
-    updateCalibration();
-    updateCircle();
+    overlay.addEventListener("pointermove", (event) => {
+      if (!dragging) {
+        return;
+      }
+      offsetX = startOffsetX + (event.clientX - startX);
+      offsetY = startOffsetY + (event.clientY - startY);
+      updateOverlay();
+    });
 
-    calibrationWrap.append(calibrationTitle, calibrationTrack, calibrationSlider, calibrationValue, calibrationSave);
-    gadgetArea.append(valueLabel, circle, input, calibrationWrap);
+    overlay.addEventListener("pointerup", () => {
+      dragging = false;
+    });
+    overlay.addEventListener("pointercancel", () => {
+      dragging = false;
+    });
+
+    updateOverlay();
+
+    gadgetArea.append(area, slider);
   }
 
   function renderChoice(stage) {
@@ -534,8 +574,8 @@
     }
 
     switch (stage.type) {
-      case "circle":
-        renderCircle(stage);
+      case "overlay":
+        renderOverlay(stage);
         break;
       case "gyro":
         renderGyro(stage);
@@ -642,11 +682,15 @@
     if (currentPhase !== "open" || currentValue === null || !playerName) {
       return;
     }
-    responsesRef.child(currentStageIndex).child(playerId).set({
+    const payload = {
       name: playerName,
       value: currentValue,
       submittedAt: Date.now()
-    });
+    };
+    if (currentMeta) {
+      payload.meta = currentMeta;
+    }
+    responsesRef.child(currentStageIndex).child(playerId).set(payload);
     playersRef.child(playerId).update({
       id: playerId,
       name: playerName,
